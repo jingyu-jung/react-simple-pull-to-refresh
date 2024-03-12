@@ -43,7 +43,9 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({
   let pullToRefreshThresholdBreached: boolean = false;
   let fetchMoreTresholdBreached: boolean = false; // if true, fetchMore loader is displayed
   let isDragging: boolean = false;
+  let startX: number = 0;
   let startY: number = 0;
+  let currentX: number = 0;
   let currentY: number = 0;
 
   useEffect(() => {
@@ -138,11 +140,15 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({
   const onTouchStart = (e: MouseEvent | TouchEvent): void => {
     isDragging = false;
     if (e instanceof MouseEvent) {
+      startX = e.pageX;
       startY = e.pageY;
     }
     if (window.TouchEvent && e instanceof TouchEvent) {
+      startX = e.touches[0].pageX;
       startY = e.touches[0].pageY;
     }
+
+    currentX = startX;
     currentY = startY;
     // Check if element can be scrolled
     if (e.type === 'touchstart' && isTreeScrollable(e.target as HTMLElement, DIRECTION.UP)) {
@@ -161,14 +167,21 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({
     }
 
     if (window.TouchEvent && e instanceof TouchEvent) {
+      currentX = e.touches[0].pageX;
       currentY = e.touches[0].pageY;
     } else {
+      currentX = (e as MouseEvent).pageX;
       currentY = (e as MouseEvent).pageY;
     }
 
     containerRef.current!.classList.add('ptr--dragging');
 
     if (currentY < startY) {
+      isDragging = false;
+      return;
+    }
+
+    if (Math.abs(currentX - startX) >= Math.abs(currentY - startY)) {
       isDragging = false;
       return;
     }
